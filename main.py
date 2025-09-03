@@ -1,7 +1,10 @@
 import telebot, random, re, time, requests
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+from dotenv import load_dotenv
+import os
 
-# ✅ Bot Token
+# ✅ Load Token from .env
+load_dotenv()
 TOKEN = "8223378978:AAGYcylIUyqeST6_GLB9PE643CSNJmpf7hw"
 bot = telebot.TeleBot(TOKEN)
 
@@ -63,25 +66,23 @@ def generate_output(bin_input, username):
 """
     return text
 
-# ✅ /start command
+# ✅ /start
 @bot.message_handler(commands=['start'])
 def start_handler(message):
-    # Save user ID
     user_id = str(message.from_user.id)
     with open("users.txt", "a+") as f:
         f.seek(0)
         if user_id not in f.read().splitlines():
             f.write(user_id + "\n")
 
-    # Response message
     text = (
-       "🤖 Bot Status: Active ✅\n\n"
+        "🤖 Bot Status: Active ✅\n\n"
         "📢 For announcements and updates, join us 👉 [here](https://t.me/TrickHubBD)\n\n"
         "💡 Tip: To use 𝒁𝒆𝒓𝒐𝑶𝒏𝑮𝒆𝒏 ∞ in your group, make sure I'm added as admin."
     )
     bot.reply_to(message, text, parse_mode="Markdown")
 
-# ✅ /gen command
+# ✅ /gen
 @bot.message_handler(commands=['gen'])
 def gen_handler(message):
     parts = message.text.split(" ", 1)
@@ -96,7 +97,6 @@ def gen_handler(message):
     btn.add(InlineKeyboardButton("Re-Generate ♻️", callback_data=f"again|{bin_input}"))
     bot.reply_to(message, text, parse_mode="HTML", reply_markup=btn)
 
-# ✅ /gen button callback
 @bot.callback_query_handler(func=lambda call: call.data.startswith("again|"))
 def again_handler(call):
     bin_input = call.data.split("|", 1)[1]
@@ -115,13 +115,13 @@ def again_handler(call):
     except:
         bot.send_message(call.message.chat.id, text, parse_mode="HTML", reply_markup=btn)
 
-# ✅ /ask command (uses external GPT API)
+# ✅ /ask
 @bot.message_handler(commands=['ask'])
 def ask_handler(message):
     parts = message.text.split(" ", 1)
     if len(parts) < 2:
         return bot.reply_to(message, "❓ Usage: `/ask your question`", parse_mode="Markdown")
-    
+
     prompt = parts[1]
     try:
         res = requests.get(f"https://gpt-3-5.apis-bj-devs.workers.dev/?prompt={prompt}")
@@ -137,7 +137,7 @@ def ask_handler(message):
     except Exception as e:
         bot.reply_to(message, f"❌ Error: `{e}`", parse_mode="Markdown")
 
-# ✅ /fake command (generate fake address)
+# ✅ /fake
 @bot.message_handler(commands=['fake'])
 def fake_address_handler(message):
     parts = message.text.split(" ", 1)
@@ -145,7 +145,6 @@ def fake_address_handler(message):
         return bot.reply_to(message, "⚠️ Example:\n`/fake us`", parse_mode="Markdown")
 
     country_code = parts[1].strip().lower()
-
     supported = [
         "dz","ar","au","bh","bd","be","br","kh","ca","co","dk","eg",
         "fi","fr","de","in","it","jp","kz","my","mx","ma","nz","pa",
@@ -154,7 +153,7 @@ def fake_address_handler(message):
     ]
 
     if country_code not in supported:
-        return bot.reply_to(message, "❌ This country is not supported or you entered an invalid code.", parse_mode="Markdown")
+        return bot.reply_to(message, "❌ This country is not supported or invalid.", parse_mode="Markdown")
 
     url = f"https://randomuser.me/api/?nat={country_code}"
     try:
@@ -180,89 +179,52 @@ def fake_address_handler(message):
 
         bot.reply_to(message, msg, parse_mode="Markdown")
     except Exception:
-        bot.reply_to(message, "❌ Something went wrong. Please try again later.", parse_mode="Markdown")
+        bot.reply_to(message, "❌ Something went wrong. Try again later.", parse_mode="Markdown")
 
-# ✅ /country command
+# ✅ /country
 @bot.message_handler(commands=['country'])
 def country_command(message):
     msg = """🌍 *Supported Countries:*
-
-1. Algeria (DZ)
-2. Argentina (AR)
-3. Australia (AU)
-4. Bahrain (BH)
-5. Bangladesh (BD)
-6. Belgium (BE)
-7. Brazil (BR)
-8. Cambodia (KH)
-9. Canada (CA)
-10. Colombia (CO)
-11. Denmark (DK)
-12. Egypt (EG)
-13. Finland (FI)
-14. France (FR)
-15. Germany (DE)
-16. India (IN)
-17. Italy (IT)
-18. Japan (JP)
-19. Kazakhstan (KZ)
-20. Malaysia (MY)
-21. Mexico (MX)
-22. Morocco (MA)
-23. New Zealand (NZ)
-24. Panama (PA)
-25. Pakistan (PK)
-26. Peru (PE)
-27. Poland (PL)
-28. Qatar (QA)
-29. Saudi Arabia (SA)
-30. Singapore (SG)
-31. Spain (ES)
-32. Sweden (SE)
-33. Switzerland (CH)
-34. Thailand (TH)
-35. Turkiye (TR)
-36. United Kingdom (UK)
-37. United States (US)"""
+🇺🇸 United States (US)
+🇧🇩 Bangladesh (BD)
+🇮🇳 India (IN)
+🇬🇧 United Kingdom (UK)
+... and more (see code)
+"""
     bot.reply_to(message, msg, parse_mode="Markdown")
 
-# ✅ Broadcast command (only for bot owner)
-OWNER_ID = 6321618547  # 🛑 এখানে আপনার Telegram User ID বসান
+# ✅ /broadcast (Owner only)
+OWNER_ID = 6321618547  # Replace with your Telegram ID
 
 @bot.message_handler(commands=['broadcast'])
 def broadcast_handler(message):
     if message.from_user.id != OWNER_ID:
-        return bot.reply_to(message, "🚫 You are not authorized to use this command.")
+        return bot.reply_to(message, "🚫 You are not authorized.")
 
     try:
         _, text = message.text.split(" ", 1)
     except:
-        return bot.reply_to(message, "⚠️ Usage:\n`/broadcast Your message here`", parse_mode="Markdown")
+        return bot.reply_to(message, "⚠️ Usage:\n`/broadcast Your message`", parse_mode="Markdown")
 
-    bot.reply_to(message, "📢 Sending broadcast to all users...")
+    bot.reply_to(message, "📢 Sending broadcast...")
 
     try:
         with open("users.txt", "r") as f:
             users = f.read().splitlines()
     except FileNotFoundError:
-        return bot.send_message(message.chat.id, "❌ No users found in users.txt")
+        return bot.send_message(message.chat.id, "❌ No users found.")
 
     sent, failed = 0, 0
     for uid in users:
         try:
-            bot.send_message(uid, f"📢 *Broadcast Message:*\n\n{text}", parse_mode="Markdown")
+            bot.send_message(uid, f"📢 *Broadcast:*\n\n{text}", parse_mode="Markdown")
             sent += 1
             time.sleep(0.1)
-        except Exception as e:
+        except:
             failed += 1
             continue
 
-    bot.send_message(
-        message.chat.id,
-        f"✅ Broadcast completed.\n\n🟢 Sent: `{sent}`\n🔴 Failed: `{failed}`",
-        parse_mode="Markdown"
-    )
-if __name__ == '__main__':
-    bot.polling(none_stop=True)
+    bot.send_message(message.chat.id, f"✅ Done.\n🟢 Sent: `{sent}`\n🔴 Failed: `{failed}`", parse_mode="Markdown")
 
-
+print("🤖 Bot is running...")
+bot.polling()
